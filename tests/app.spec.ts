@@ -87,9 +87,9 @@ test('study progress is semantic and has no serious accessibility findings', asy
   await page.getByRole('button', { name: 'Today' }).click();
   await page.getByRole('button', { name: /Begin recall/ }).click();
   const progress = page.getByRole('progressbar', { name: 'Recall session progress' });
-  await expect(progress).toHaveAttribute('aria-valuemin', '0');
-  await expect(progress).toHaveAttribute('aria-valuemax', '1');
-  await expect(progress).toHaveAttribute('aria-valuenow', '0');
+  await expect(progress).toHaveAttribute('max', '1');
+  await expect(progress).toHaveAttribute('value', '0');
+  await expect(progress).toHaveAttribute('aria-valuetext', '0 of 1 complete');
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact || ''))).toEqual([]);
 });

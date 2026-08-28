@@ -190,7 +190,7 @@ async function renderStudy(): Promise<void> {
   const recordingCount = await countRecordings();
   const canRecord = license.unlocked || Boolean(existingRecording) || recordingCount < 3;
   app.innerHTML = shell(`
-    <section class="study-top"><button class="text-button back" data-route="home">← Leave for now</button><div class="progress-label">PROMPT ${queueIndex + 1} / ${queue.length}</div><div class="progress-track" role="progressbar" aria-label="Recall session progress" aria-valuemin="0" aria-valuemax="${queue.length}" aria-valuenow="${queueIndex}" aria-valuetext="${queueIndex} of ${queue.length} complete"><i style="width:${queueIndex / queue.length * 100}%"></i></div></section>
+    <section class="study-top"><button class="text-button back" data-route="home">← Leave for now</button><div class="progress-label">PROMPT ${queueIndex + 1} / ${queue.length}</div><progress class="progress-track" aria-label="Recall session progress" aria-valuetext="${queueIndex} of ${queue.length} complete" max="${queue.length}" value="${queueIndex}">${queueIndex} of ${queue.length}</progress></section>
     <section class="recall-card ${revealed ? 'is-revealed' : ''}">
       <p class="eyebrow">Retrieve the missing word</p>
       <h1>${esc(word.context).replace('___', '<mark>________</mark>')}</h1>
