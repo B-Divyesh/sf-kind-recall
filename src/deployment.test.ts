@@ -27,4 +27,9 @@ describe('Azure Static Web Apps response policy', () => {
     expect(config.globalHeaders['Permissions-Policy']).toContain('microphone=(self)');
     expect(config.globalHeaders['X-Frame-Options']).toBe('DENY');
   });
+
+  it('keeps hidden deployment metadata out of the atomic service-worker precache', () => {
+    const builder = readFileSync('scripts/build-sw.mjs', 'utf8');
+    expect(builder).toContain("!path.endsWith('staticwebapp.config.json')");
+  });
 });

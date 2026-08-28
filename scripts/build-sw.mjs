@@ -8,7 +8,7 @@ async function files(dir) {
   return nested.flat();
 }
 
-const all = (await files('dist')).filter((path) => !path.endsWith('/sw.js') && !path.endsWith('sw.js'));
+const all = (await files('dist')).filter((path) => !path.endsWith('/sw.js') && !path.endsWith('sw.js') && !path.endsWith('staticwebapp.config.json'));
 const urls = all.map((path) => `/${relative('dist', path).replaceAll('\\\\', '/')}`).sort();
 const template = await readFile('scripts/sw.template.js', 'utf8');
 const cacheVersion = createHash('sha256').update(JSON.stringify(urls)).digest('hex').slice(0, 10);

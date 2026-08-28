@@ -189,6 +189,7 @@ test('opens legal pages directly', async ({ page }) => {
 });
 
 test('@claim:offline-reload reloads the sample app while offline after first visit', async ({ page, context }) => {
+  await context.route('**/staticwebapp.config.json', (route) => route.abort());
   await page.goto('/demo/');
   await page.waitForFunction(async () => {
     await navigator.serviceWorker.ready;
