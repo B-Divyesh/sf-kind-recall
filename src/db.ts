@@ -1,6 +1,7 @@
 import type { ExportBundle, Review, Word } from './types';
 
-const DB_NAME = 'kind-recall';
+const DEMO_MODE = location.pathname.replace(/\/+$/, '') === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
+const DB_NAME = DEMO_MODE ? 'kind-recall-demo' : 'kind-recall';
 const DB_VERSION = 1;
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
@@ -129,11 +130,18 @@ function isWord(value: unknown): value is Word {
   return typeof word.id === 'string' && typeof word.term === 'string' && typeof word.meaning === 'string' && typeof word.context === 'string' && typeof word.createdAt === 'number' && typeof word.dueAt === 'number';
 }
 
-export async function importBundle(value: unknown): Promise<number> {
+export async function importBundle(value: unknown, maxWords: number): Promise<number> {
   if (!value || typeof value !== 'object') throw new Error('This file is not a Kind Recall export.');
   const bundle = value as Partial<ExportBundle>;
   if (bundle.format !== 'kind-recall' || bundle.version !== 1 || !Array.isArray(bundle.words) || !bundle.words.every(isWord)) {
     throw new Error('This file is not a supported Kind Recall export. Choose the JSON file created by Export data.');
+  }
+  const existingIds = new Set((await getWords()).map((word) => word.id));
+  const importedIds = new Set(bundle.words.map((word) => word.id));
+  const resultingCount = existingIds.size + [...importedIds].filter((id) => !existingIds.has(id)).length;
+  if (resultingCount > maxWords) {
+    const sheet = maxWords === 20 ? 'free sheet' : 'Plus sheet';
+    throw new Error(`This import would make ${resultingCount} words. Your ${sheet} holds ${maxWords}. Remove words${maxWords === 20 ? ' or get Plus' : ''}, then import again.`);
   }
   const db = await openDatabase();
   const transaction = db.transaction(['words', 'reviews'], 'readwrite');
@@ -145,4 +153,12 @@ export async function importBundle(value: unknown): Promise<number> {
   }
   await transactionDone(transaction);
   return bundle.words.length;
+}
+
+export async function clearAllData(): Promise<void> {
+  const db = await openDatabase();
+  const stores = ['words', 'reviews', 'settings', 'recordings'];
+  const transaction = db.transaction(stores, 'readwrite');
+  stores.forEach((store) => transaction.objectStore(store).clear());
+  await transactionDone(transaction);
 }

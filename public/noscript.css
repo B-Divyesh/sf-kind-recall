@@ -1,0 +1,2 @@
+body.booting { display: block; margin: 0; padding: 3rem 1.5rem; color: #14283a; background: #f5f0e3; font: 16px/1.55 Georgia, serif; }
+body.booting #app, body.booting > .skip-link { display: none; }

@@ -16,7 +16,7 @@ describe('forgiving scheduler', () => {
     expect(nextInterval(60, true, 4)).toBe(90);
   });
 
-  it('builds a five-item oldest-first return queue after a week', () => {
+  it('@claim:return-set builds a five-item oldest-first return queue after a week', () => {
     const now = 20 * DAY;
     const words = Array.from({ length: 8 }, (_, index) => makeWord(String(index + 1), index * DAY));
     expect(isReturnVisit(now - 8 * DAY, now)).toBe(true);
@@ -28,7 +28,7 @@ describe('forgiving scheduler', () => {
     expect(buildQueue([makeWord('1', now - 1), makeWord('2', now + DAY)], now - DAY, now)).toHaveLength(1);
   });
 
-  it('keeps correctness separate from confidence in scheduling', () => {
+  it('@claim:separate-evaluation keeps correctness separate from confidence in scheduling', () => {
     const word = { ...makeWord('1'), intervalDays: 6, reviewCount: 2 };
     const result = scheduleWord(word, false, 4, 1000);
     expect(result.intervalDays).toBe(1);

@@ -1,10 +1,14 @@
 import './styles.css';
-import { addReview, countRecordings, deleteWord, exportBundle, getRecording, getReviews, getSetting, getWords, importBundle, saveRecording, saveWord, setSetting } from './db';
+import { addReview, clearAllData, countRecordings, deleteWord, exportBundle, getRecording, getReviews, getSetting, getWords, importBundle, saveRecording, saveWord, setSetting } from './db';
 import { buildQueue, isReturnVisit, normalizeAnswer, scheduleWord } from './scheduler';
 import { checkoutUrl, loadLicense, removeLicense, restoreLicense, type LicenseState } from './license';
 import type { Confidence, Review, Word } from './types';
 
 type Route = 'home' | 'library' | 'add' | 'study' | 'settings';
+
+const DEMO_MODE = location.pathname.replace(/\/+$/, '') === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
+const FREE_WORD_LIMIT = 20;
+const PLUS_WORD_LIMIT = 100;
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 if (!app) throw new Error('Kind Recall could not find its page container.');
@@ -23,6 +27,8 @@ let recorder: MediaRecorder | undefined;
 let recorderStream: MediaStream | undefined;
 let recordingParts: Blob[] = [];
 
+const activeWordLimit = (): number => license.unlocked ? PLUS_WORD_LIMIT : FREE_WORD_LIMIT;
+
 const esc = (value: string): string => value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] || character);
 const uid = (): string => crypto.randomUUID();
 const dateLabel = (timestamp: number): string => new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(timestamp);
@@ -32,6 +38,30 @@ const daysAway = (timestamp: number): string => {
   if (days === 1) return 'Tomorrow';
   return `In ${days} days`;
 };
+
+async function seedDemo(): Promise<void> {
+  if ((await getWords()).length) return;
+  const now = Date.now();
+  const samples = [
+    ['sobremesa', 'time spent talking after a meal', 'We stayed for ___ after Sunday lunch.'],
+    ['meraki', 'care and creativity put into your work', 'She prepared the welcome table with ___.'],
+    ['dépaysement', 'the feeling of being somewhere unfamiliar', 'The night train gave me a welcome sense of ___.'],
+    ['saudade', 'a tender longing for someone or somewhere absent', 'That old song brought a sudden feeling of ___.'],
+    ['komorebi', 'sunlight filtering through leaves', 'We sat quietly beneath the morning ___.'],
+    ['passeggiata', 'a relaxed evening walk', 'After dinner, we joined the town’s ___.']
+  ] as const;
+  await Promise.all(samples.map(([term, meaning, context], index) => saveWord({
+    id: `demo-word-${index + 1}`,
+    term,
+    meaning,
+    context,
+    createdAt: now - (samples.length - index) * 60_000,
+    updatedAt: now,
+    dueAt: now - (samples.length - index) * 1_000,
+    intervalDays: 0,
+    reviewCount: 0
+  })));
+}
 
 function setStatus(message: string, tone: 'neutral' | 'error' | 'success' = 'neutral'): void {
   statusMessage = message;
@@ -56,6 +86,7 @@ function icon(name: 'home' | 'words' | 'add' | 'settings'): string {
 function shell(content: string, active?: Route): string {
   return `
     <div class="offline-bar" id="offline-bar" ${navigator.onLine ? 'hidden' : ''}>Offline — your words and recall still work on this device.</div>
+    ${DEMO_MODE ? '<aside class="demo-bar" aria-label="Demo mode"><strong>Demo — sample data, nothing is saved to your real sheet.</strong><span><button class="text-button" data-action="reset-demo">Reset demo</button><button class="text-button" data-action="start-real">Start for real</button></span></aside>' : ''}
     <header class="site-header">
       <button class="wordmark" data-route="home" aria-label="Kind Recall home"><img src="/icons/icon.svg" width="36" height="36" alt=""><span>Kind <i>Recall</i></span></button>
       <p class="privacy-mark"><span aria-hidden="true">●</span> On-device by default</p>
@@ -91,8 +122,9 @@ async function renderHome(): Promise<void> {
           <p class="eyebrow">Project 001 · your working vocabulary</p>
           <h1>Make a word<br><em>ready to use.</em></h1>
           <p class="lede">Recall words inside sentences that matter to you. No streaks. No shame after time away. Just a small, useful return.</p>
-          <button class="primary large" data-route="add">Add your first word <span aria-hidden="true">→</span></button>
-          <p class="microcopy">Works offline · stays on this device</p>
+          <div class="hero-actions"><a class="primary large" href="/demo/">Try it with sample data <span aria-hidden="true">→</span></a><button class="secondary large" data-route="add">Add your first word</button></div>
+          <p class="action-note">The sample opens a ready-to-use recall sheet. Your own sheet stays unchanged.</p>
+          <ul class="plain-facts"><li>Works offline after the first visit</li><li>Words stay in this browser</li><li>20 words free; Plus costs $12 once</li></ul>
         </div>
         <figure class="hero-figure">
           <picture><source type="image/avif" srcset="/assets/hero-drafting-720.avif 720w, /assets/hero-drafting-1200.avif 1200w"><img src="/assets/hero-drafting-720.webp" srcset="/assets/hero-drafting-720.webp 720w, /assets/hero-drafting-1200.webp 1200w" sizes="(max-width: 800px) 100vw, 52vw" width="1200" height="800" fetchpriority="high" alt="Two blank index cards connected by a red revision arrow on an architectural drafting sheet"></picture>
@@ -118,19 +150,20 @@ async function renderHome(): Promise<void> {
 
 function renderLibrary(): void {
   app.innerHTML = shell(`
-    <section class="page-title"><div><p class="eyebrow">Working set · ${words.length}/${license.unlocked ? 100 : 20}</p><h1>Your words, in context.</h1><p class="lede">These are your own sentences. The next date changes only when you review.</p></div><button class="primary" data-route="add">Add a word</button></section>
+    <section class="page-title"><div><p class="eyebrow">Working set · ${words.length}/${activeWordLimit()}</p><h1>Your words, in context.</h1><p class="lede">These are your own sentences. The next date changes only when you review.</p></div><button class="primary" data-route="add">Add a word</button></section>
     ${words.length ? `<ul class="word-list">${words.map((word, index) => `<li><div class="word-index">${String(index + 1).padStart(2, '0')}</div><div class="word-body"><h2>${esc(word.term)}</h2><p class="meaning">${esc(word.meaning)}</p><p class="context">“${esc(word.context)}”</p></div><div class="word-plan"><span>${daysAway(word.dueAt)}</span><small>${word.reviewCount} review${word.reviewCount === 1 ? '' : 's'}</small></div><div class="row-actions"><button class="icon-button" data-action="edit-word" data-id="${word.id}" aria-label="Edit ${esc(word.term)}">Edit</button><button class="icon-button danger-text" data-action="delete-word" data-id="${word.id}" aria-label="Delete ${esc(word.term)}">Delete</button></div></li>`).join('')}</ul>` : `<section class="empty-sheet"><div class="registration-mark" aria-hidden="true">+</div><h2>The sheet is clear.</h2><p>Add a word you wished you had in a real conversation.</p><button class="primary" data-route="add">Add your first word</button></section>`}
   `, 'library');
 }
 
 function renderWordForm(): void {
   const editing = words.find((word) => word.id === editingId);
-  const limitReached = !license.unlocked && words.length >= 20 && !editing;
+  const limit = activeWordLimit();
+  const limitReached = words.length >= limit && !editing;
   app.innerHTML = shell(`
     <section class="form-layout">
       <div class="form-intro"><p class="eyebrow">${editing ? 'Revise entry' : 'New entry'}</p><h1>${editing ? `Adjust “${esc(editing.term)}”.` : 'Start with a real moment.'}</h1><p class="lede">Use a sentence from your life. Replace the word with three underscores so recall has somewhere to happen.</p><div class="example-note"><span>EXAMPLE / 01</span><p>Word: <b>sobremesa</b></p><p>Meaning: time spent talking after a meal</p><p>Context: We stayed for ___ after Sunday lunch.</p></div></div>
       <div class="form-sheet">
-        ${limitReached ? `<div class="limit-note"><h2>Your free sheet holds 20 words.</h2><p>Keep practising and exporting them for free, or unlock room for 100 words and unlimited voice notes.</p><a class="primary" href="${checkoutUrl()}">Unlock once for $12</a></div>` : `<form id="word-form" novalidate>
+        ${limitReached ? `<div class="limit-note"><h2>Your ${license.unlocked ? 'Plus' : 'free'} sheet holds ${limit} words.</h2><p>${license.unlocked ? 'Remove a word before adding another.' : 'Keep practising and exporting them for free, or get room for 100 words and unlimited voice notes.'}</p>${license.unlocked ? '' : `<a class="primary" href="${checkoutUrl()}">Get Plus once for $12</a>`}</div>` : `<form id="word-form" novalidate>
           <label for="term">Word or phrase <span>required</span></label><input id="term" name="term" required maxlength="80" autocomplete="off" value="${editing ? esc(editing.term) : ''}">
           <label for="meaning">Meaning in your own words <span>required</span></label><textarea id="meaning" name="meaning" required maxlength="240" rows="3">${editing ? esc(editing.meaning) : ''}</textarea>
           <label for="context">A personal sentence with ___ <span>required</span></label><textarea id="context" name="context" required maxlength="300" rows="4" aria-describedby="context-help">${editing ? esc(editing.context) : ''}</textarea><p id="context-help" class="field-help">Use exactly where the missing word belongs. Your sentence stays on this device.</p>
@@ -157,7 +190,7 @@ async function renderStudy(): Promise<void> {
   const recordingCount = await countRecordings();
   const canRecord = license.unlocked || Boolean(existingRecording) || recordingCount < 3;
   app.innerHTML = shell(`
-    <section class="study-top"><button class="text-button back" data-route="home">← Leave for now</button><div class="progress-label">PROMPT ${queueIndex + 1} / ${queue.length}</div><div class="progress-track" aria-label="${queueIndex} of ${queue.length} complete"><i style="width:${queueIndex / queue.length * 100}%"></i></div></section>
+    <section class="study-top"><button class="text-button back" data-route="home">← Leave for now</button><div class="progress-label">PROMPT ${queueIndex + 1} / ${queue.length}</div><div class="progress-track" role="progressbar" aria-label="Recall session progress" aria-valuemin="0" aria-valuemax="${queue.length}" aria-valuenow="${queueIndex}" aria-valuetext="${queueIndex} of ${queue.length} complete"><i style="width:${queueIndex / queue.length * 100}%"></i></div></section>
     <section class="recall-card ${revealed ? 'is-revealed' : ''}">
       <p class="eyebrow">Retrieve the missing word</p>
       <h1>${esc(word.context).replace('___', '<mark>________</mark>')}</h1>
@@ -229,6 +262,7 @@ async function handleWordForm(form: HTMLFormElement): Promise<void> {
   if (!term || !meaning || !context) { if (error) error.textContent = 'Complete all three fields before adding the word.'; return; }
   if (!context.includes('___')) { if (error) error.textContent = 'Put three underscores (___) where the word belongs in your sentence.'; document.querySelector<HTMLTextAreaElement>('#context')?.focus(); return; }
   const existing = words.find((word) => word.id === editingId);
+  if (!existing && words.length >= activeWordLimit()) { if (error) error.textContent = `Your ${license.unlocked ? 'Plus' : 'free'} sheet already holds ${activeWordLimit()} words. Remove one before adding another.`; return; }
   const now = Date.now();
   await saveWord(existing ? { ...existing, term, meaning, context, updatedAt: now } : { id: uid(), term, meaning, context, createdAt: now, updatedAt: now, dueAt: now, intervalDays: 0, reviewCount: 0 });
   words = await getWords();
@@ -313,6 +347,9 @@ app.addEventListener('click', async (event) => {
     download(`kind-recall-${new Date().toISOString().slice(0, 10)}.csv`, csv, 'text/csv'); setStatus('CSV exported.', 'success');
   }
   if (action === 'remove-license') { if (confirm('Remove the Plus license from this device? Your words will stay.')) { removeLicense(); license = { unlocked: false }; renderSettings(); setStatus('License removed. Your data is unchanged.'); } }
+  if (action === 'reset-demo' && DEMO_MODE) { await clearAllData(); removeLicense(); license = { unlocked: false }; await seedDemo(); [words, reviews] = await Promise.all([getWords(), getReviews()]); await renderHome(); setStatus('Demo reset to its original sample.', 'success'); }
+  if (action === 'start-real' && DEMO_MODE) { await clearAllData(); removeLicense(); location.assign('/'); }
+  if (action === 'reload-app') location.reload();
   if (action === 'update-app') { navigator.serviceWorker.controller?.postMessage({ type: 'SKIP_WAITING' }); location.reload(); }
 });
 
@@ -336,7 +373,7 @@ app.addEventListener('change', async (event) => {
   const input = event.target as HTMLInputElement;
   if (input.id !== 'import-file' || !input.files?.[0]) return;
   try {
-    const count = await importBundle(JSON.parse(await input.files[0].text()));
+    const count = await importBundle(JSON.parse(await input.files[0].text()), activeWordLimit());
     words = await getWords(); reviews = await getReviews(); renderSettings(); setStatus(`Imported ${count} word${count === 1 ? '' : 's'}. Existing words were kept.`, 'success');
   } catch (error) { setStatus(error instanceof Error ? error.message : 'The import could not be read.', 'error'); }
 });
@@ -355,18 +392,19 @@ async function registerServiceWorker(): Promise<void> {
 
 async function init(): Promise<void> {
   const path = location.pathname.replace(/\/+$/, '');
-  if (path === '/privacy') { renderLegal('privacy'); app.classList.add('ready'); document.body.style.display = ''; await registerServiceWorker(); return; }
-  if (path === '/terms') { renderLegal('terms'); app.classList.add('ready'); document.body.style.display = ''; await registerServiceWorker(); return; }
+  if (path === '/privacy') { renderLegal('privacy'); app.classList.add('ready'); document.body.classList.remove('booting'); await registerServiceWorker(); return; }
+  if (path === '/terms') { renderLegal('terms'); app.classList.add('ready'); document.body.classList.remove('booting'); await registerServiceWorker(); return; }
   try {
+    if (DEMO_MODE) { document.title = 'Demo — Kind Recall'; await seedDemo(); }
     [words, reviews, license] = await Promise.all([getWords(), getReviews(), loadLicense()]);
     await renderHome();
     app.classList.add('ready');
-    document.body.style.display = '';
+    document.body.classList.remove('booting');
     await registerServiceWorker();
   } catch (error) {
-    app.innerHTML = `<main id="main" class="fatal-error"><h1>The drafting sheet could not open.</h1><p>${esc(error instanceof Error ? error.message : 'On-device storage is unavailable.')}</p><p>Check that private browsing has not blocked site storage, then reload.</p><button class="primary" onclick="location.reload()">Try again</button></main>`;
+    app.innerHTML = `<main id="main" class="fatal-error"><h1>The drafting sheet could not open.</h1><p>${esc(error instanceof Error ? error.message : 'On-device storage is unavailable.')}</p><p>Check that private browsing has not blocked site storage, then reload.</p><button class="primary" data-action="reload-app">Try again</button></main>`;
     app.classList.add('ready');
-    document.body.style.display = '';
+    document.body.classList.remove('booting');
   }
 }
 

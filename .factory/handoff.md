@@ -1,68 +1,56 @@
-# Kind Recall build handoff
+# Kind Recall repair handoff
 
-## Independent verification status — FAIL (2026-08-28, fresh evidence)
+## Status
 
-Candidate `6c731c1df35ca581159a67fe19c9c02d0379d6c1` was independently verified
-from a clean detached checkout against <https://kind-recall.sociobot.in/>. The
-live HTML, JS, CSS, service worker, manifest, offline page, and legal pages
-byte-match the candidate build. **The release verdict is FAIL.**
+Release-blocking findings from independent verification commit `16a12ed4d4a0b6f5c6abae52e74a35444e5044d9` have been repaired. Local release gates pass. Live deployment evidence is recorded below after deployment.
 
-- **High — VFY2-001:** a free browser imported a valid 101-word Kind Recall
-  JSON file and the library showed `WORKING SET · 101/20`. Import bypasses both
-  the 20-word free and 100-word Plus capacity limits.
-- **High — VFY2-002:** fresh axe WCAG A/AA on the actual study screen found a
-  serious `aria-prohibited-attr`: a plain `div.progress-track` has `aria-label`
-  but no valid role.
-- **Medium — VFY2-003:** deployed hashed JS and CSS are cached only for 30
-  seconds, without `immutable`.
-- **Low — VFY2-004:** the manifest is served as `application/octet-stream`.
+## Repairs
 
-The earlier deployment-only rate-limit finding is no longer reproducible: a
-fresh 60-concurrent production `/verify` burst began returning `429` at request
-15 with `Retry-After: 4`. Offline reload, service-worker update toast,
-desktop/mobile flows, keyboard use, privacy/network checks, console checks,
-build, typecheck, unit tests, and supplied E2E tests passed. See
-`.factory/verification-2.md` for exact commands, hashes, full evidence, and
-remediation. Do not ship until both high-severity defects are fixed and the
-candidate is independently retested.
+- **VFY2-001 — import capacity:** `importBundle()` now calculates the resulting unique word count before opening its write transaction. It rejects an over-limit import without writing words or reviews. The UI passes the active 20-word free or 100-word Plus limit. Normal word creation now enforces both limits too.
+- **VFY2-002 — study ARIA:** the visual session track is now a named `progressbar` with `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, and readable `aria-valuetext`.
+- **VFY2-003 — immutable hashed assets:** Vite now emits hashed JavaScript and CSS under `/_app/`. `staticwebapp.config.json` gives that path `public, max-age=31536000, immutable`; HTML and `sw.js` remain on the update path, and the worker is explicitly `no-cache, no-store, must-revalidate`.
+- **VFY2-004 — manifest MIME:** the deployment maps `.webmanifest` to `application/manifest+json`.
+- Response hardening now includes CSP, `Permissions-Policy`, `X-Frame-Options: DENY`, `nosniff`, and strict-origin referrer policy. Inline event/style dependencies were removed so CSP does not need `unsafe-inline`.
 
-## Shipped
+## Demo and claims
 
-Kind Recall is a complete local-first vocabulary practice PWA built with Vite and TypeScript. Learners can add up to 20 words free (100 with Plus), write personal blanked contexts, complete typed or optional spoken recall prompts, reveal answers, and record confidence separately from correctness. Reviews are rescheduled locally. After seven days away, the session becomes a forgiving return set capped at five of the oldest due words.
+`/demo/` seeds six realistic due words in the separate `kind-recall-demo` IndexedDB database. Its persistent banner provides **Reset demo** and **Start for real**. Leaving clears the demo data and returns to the untouched `kind-recall` database. Demo license keys also use a separate `demo:` localStorage prefix.
 
-The library supports editing and confirmed deletion. Settings provides portable JSON backup/import, CSV export, voice-note disclosure, and the $12 one-time Sociobot license purchase/restore flow. Returned licenses are stored under `sb_license:kind-recall`; verification is cached for at most one day and never blocks the free experience.
+Every visitor-facing product claim is listed with an executable sandbox test in `.factory/claims.json`. Demo mechanics are documented in `.factory/demo.md`; landing copy and terminology are audited in `.factory/copy-audit.md`.
 
-User content, history, and recordings are stored in IndexedDB. Voice recordings never leave the device, are never automatically judged, and are excluded from exports. There is no account, advertising, third-party runtime script, font CDN, or analytics.
+## Verification — 2026-08-28
 
-The visual implementation follows `.factory/design.md`: warm drafting stock, architectural navy rules, vermilion revisions, condensed technical headings, serif personal notes, CSS construction grid, and a generated drafting-table hero. Original source, prompt, and provenance are in `assets/src/`; the build produces AVIF/WebP derivatives and hand-authored app icons.
+- Clean install: `npm ci` — 65 packages installed; 0 vulnerabilities.
+- Unit/config: `npm test` — 9/9 passed. This includes the return-set, confidence/correctness, immutable-cache, manifest MIME, and response-policy assertions.
+- Type check: `npm run check` — passed with no TypeScript errors. The project has no separate lint stack.
+- Production build: `npm run build` — passed; `dist/index.html` and all static routes exist.
+- Browser matrix: `npm run test:e2e` — 24/24 passed across desktop Chromium and Chromium at 390×844. Coverage includes 20/21/100/101 import boundaries, atomic rejection, normal add caps, study-screen axe, all primary routes, keyboard focus/Enter, ≥44 px mobile nav targets, no 390 px overflow, persistence, demo isolation, same-origin privacy, downloads, and offline reload.
+- Axe 4.10 via Playwright: zero serious/critical findings on empty, populated demo, study, privacy, and terms screens in both browser projects.
+- Factory URL smoke test against the production build: HTTP 200, title, `lang`, one h1, main landmark, image alt, button names, and zero console/page errors.
+- Service-worker update simulation: a changed worker revision displayed “A fresh sheet is ready.” — passed.
+- Lighthouse 12.8.2 mobile against the production build: Performance 100, Accessibility 100, Best Practices 100, SEO 100; FCP 1.1 s, LCP 1.7 s, CLS 0, TBT 0 ms.
+- Budgets: initial JS 33.8 KB raw / 12.2 KB gzip; CSS 19.9 KB raw / 5.1 KB gzip; largest hero 41.8 KB WebP / 30.5 KB AVIF. All are below the 200/50/300 KB limits.
+- `npm audit --omit=dev` — 0 vulnerabilities.
 
 ## Run and deploy
 
 ```sh
-npm install
+npm ci
 npm test
 npm run check
 npm run build
 npm run test:e2e
+/opt/fleet/lib/deploy-static.sh kind-recall dist
 ```
 
-Deploy `dist/`. The required build command is exactly `npm run build`; `dist/index.html` is at the root. `/privacy/` and `/terms/` are physical static entry points. Production uses the live Sociobot billing API; non-production hosts use the pilot API unless `VITE_BILLING_BASE` is provided.
+Deploy `dist/` as the unchanged `pwa-offline` static artifact. Production billing remains `https://api.sociobot.in/api/v1/products/kind-recall/...`; other hosts use the pilot API unless `VITE_BILLING_BASE` is set.
 
-## Verification — 2026-08-28
+## Live verification
 
-- `npm test`: 6/6 scheduler tests passed.
-- `npm run check`: TypeScript passed with no errors.
-- `npm run build`: passed; reproducible static output in `dist/`.
-- `npm run test:e2e`: 8/8 passed across desktop Chromium and 390×844 mobile. Covers add → recall → reschedule → reload, direct legal routes, axe WCAG A/AA scan, and `context.setOffline(true)` reload.
-- Factory `verify-url.sh`: HTTP 200, title and `lang`, exactly one h1, main landmark, image alt, button labels, and zero console/page errors all passed.
-- Lighthouse 13 mobile: Performance 100, Accessibility 100, Best Practices 100, SEO 100. FCP 0.9 s, LCP 1.8 s, CLS 0, total blocking time 0 ms.
-- Initial app JS: 30.8 KB / 11.2 KB gzip (budget 200 KB). CSS: 19.0 KB / 4.9 KB gzip (budget 50 KB). Largest hero file: 41.8 KB WebP / 30.5 KB AVIF (budget 300 KB). No web fonts.
-- `npm audit`: 0 vulnerabilities.
-- Original generated hero was visually reviewed: blank cards, coherent objects, no stray text, logos, brands, anatomy, or seams.
+Pending deployment in this work order.
 
-## Known gaps and next steps
+## Known constraints
 
-- Browser storage can be evicted by the browser or cleared by the learner; the product clearly recommends JSON backups. Audio is not exported because a portable recording archive would need a separate, carefully versioned format.
-- Microphone recording depends on browser support and permission. Typed recall remains fully functional without it.
-- The factory still needs to register the live `kind-recall` paid product and set its return URL before launch; there are no provider IDs or secrets in this repository.
-- The 30-day return/accuracy success measure requires post-launch, privacy-respecting aggregate research; this build intentionally does not add behavioral tracking.
+- Browser storage can be evicted or cleared. JSON backup is available; audio remains intentionally excluded from portable exports.
+- Microphone recording depends on browser support and permission. Typed recall remains available without it.
+- The private post-launch success measure still requires separate aggregate research; no behavioral tracking was added.

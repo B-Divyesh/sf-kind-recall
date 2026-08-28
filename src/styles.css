@@ -36,6 +36,8 @@ button:active, .primary:active, .secondary:active { transform: translateY(1px); 
 .skip-link:focus { top: 12px; }
 .boot-message { margin: 20vh auto; max-width: 24rem; padding: 24px; background: var(--paper-raised); border-top: 4px solid var(--blue); }
 .offline-bar { padding: 6px 16px; background: var(--warning); color: white; text-align: center; font: 700 13px/1.4 'Arial Narrow', Arial, sans-serif; letter-spacing: .04em; }
+.demo-bar { min-height: 52px; padding: 4px clamp(16px, 5vw, 72px); display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--ink); color: white; font: 700 13px/1.35 'Arial Narrow', Arial, sans-serif; letter-spacing: .03em; }
+.demo-bar span { display: flex; gap: 8px; }.demo-bar .text-button { color: white; white-space: nowrap; }
 .site-header { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 12px clamp(20px, 5vw, 72px); border-bottom: 1px solid rgba(23, 93, 122, .38); background: rgba(245, 240, 227, .96); }
 .wordmark { display: inline-flex; align-items: center; gap: 10px; border: 0; background: none; padding: 4px; min-height: 44px; color: var(--ink); cursor: pointer; text-decoration: none; }
 .wordmark span { font: 700 21px/1 'Arial Narrow', 'Aptos Narrow', Arial, sans-serif; letter-spacing: .03em; text-transform: uppercase; }
@@ -71,7 +73,7 @@ p { max-width: 68ch; }
 .hero-copy h1 em { color: var(--redline); font-style: normal; position: relative; }
 .hero-copy h1 em::after { content: ''; position: absolute; left: -3%; right: -8%; bottom: -5px; border-bottom: 3px solid var(--redline); transform: rotate(-1.5deg); }
 .hero-copy .lede { max-width: 37rem; }
-.microcopy { font: 700 12px/1.3 'Arial Narrow', Arial, sans-serif; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .08em; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }.action-note { margin: 12px 0; color: var(--ink-soft); font-size: 14px; }.plain-facts { margin: 20px 0 0; padding: 16px 0 0; border-top: 1px solid var(--rule); list-style: none; display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--ink-soft); font: 700 12px/1.4 'Arial Narrow', Arial, sans-serif; text-transform: uppercase; letter-spacing: .06em; }.plain-facts li::before { content: '✓'; margin-right: 6px; color: var(--success); }
 .hero-figure { margin: 0; position: relative; background: var(--paper-raised); padding: 12px; box-shadow: var(--shadow); transform: rotate(.3deg); }
 .hero-figure::before, .hero-figure::after { content: '+'; position: absolute; z-index: 2; color: var(--blue); font: 24px/1 monospace; }
 .hero-figure::before { left: -15px; top: -15px; }.hero-figure::after { right: -15px; bottom: 30px; }
@@ -127,8 +129,9 @@ footer { padding: 24px clamp(20px, 5vw, 72px); display: flex; justify-content: s
 }
 
 @media (max-width: 600px) {
+  .demo-bar { align-items: flex-start; flex-direction: column; gap: 0; padding-block: 8px; }.demo-bar span { width: 100%; }.demo-bar .text-button { flex: 1; }
   .site-header { min-height: 64px; padding: 8px 16px; }.privacy-mark { display: none; }.app-frame main { padding: 30px 18px 46px; }
-  .empty-hero { display: block; }.hero-copy h1 { font-size: 3.25rem; }.hero-copy .lede { font-size: 1.05rem; }.hero-figure { margin-top: 48px; padding: 6px; }.hero-figure figcaption { flex-wrap: wrap; }.how-strip { margin-top: 54px; }.how-strip ol { grid-template-columns: 1fr; }
+  .empty-hero { display: block; }.hero-copy h1 { font-size: 3.25rem; }.hero-copy .lede { font-size: 1.05rem; }.hero-actions > * { width: 100%; }.plain-facts { display: grid; }.hero-figure { margin-top: 48px; padding: 6px; }.hero-figure figcaption { flex-wrap: wrap; }.how-strip { margin-top: 54px; }.how-strip ol { grid-template-columns: 1fr; }
   .dashboard-head, .page-title { display: block; margin-bottom: 32px; }.dashboard-head h1, .page-title h1 { font-size: 3rem; }.due-dial { width: 112px; margin: 32px auto 0; }.due-dial span { font-size: 3rem; }
   .action-sheet { padding: 22px 18px; grid-template-columns: 1fr; gap: 12px; }.action-sheet .primary, .action-sheet .secondary { grid-column: 1; width: 100%; }.metrics { grid-template-columns: 1fr; }.metrics div { border-right: 0; border-bottom: 1px solid var(--rule); }.metrics div:last-child { border: 0; }
   .word-list li { grid-template-columns: 34px 1fr; gap: 10px; }.word-plan { grid-column: 2; }.row-actions { grid-column: 2; }.form-intro h1 { font-size: 3rem; }.form-sheet { padding: 24px 18px; margin-inline: -4px; }.form-actions { flex-direction: column-reverse; align-items: stretch; }.form-actions button { width: 100%; }

@@ -5,13 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f5f0e3" />
     <meta name="description" content="A forgiving, offline recall practice for words you want to use in real conversation." />
+    <link rel="canonical" href="https://kind-recall.sociobot.in/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Kind Recall — Make words usable" />
+    <meta property="og:description" content="Practice your own vocabulary in context, without streaks or shame after time away." />
+    <meta property="og:image" content="https://kind-recall.sociobot.in/assets/social-card-1200x630.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Kind Recall — Make words usable" />
+    <meta name="twitter:description" content="Practice your own vocabulary in context, without streaks or shame after time away." />
+    <meta name="twitter:image" content="https://kind-recall.sociobot.in/assets/social-card-1200x630.jpg" />
+    <link rel="stylesheet" href="/boot.css" />
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preload" as="image" href="/assets/hero-drafting-720.webp" imagesrcset="/assets/hero-drafting-720.webp 720w, /assets/hero-drafting-1200.webp 1200w" imagesizes="(max-width: 800px) 100vw, 52vw" type="image/webp" fetchpriority="high" />
     <title>Kind Recall — Make words usable</title>
   </head>
-  <body style="display:none">
-    <noscript><style>body{display:block!important}#app{visibility:visible!important}</style><main><h1>Kind Recall needs JavaScript</h1><p>Turn on JavaScript to use your local vocabulary sheet. Your study data remains on this device.</p></main></noscript>
+  <body class="booting">
+    <noscript><link rel="stylesheet" href="/noscript.css" /><main><h1>Kind Recall needs JavaScript</h1><p>Turn on JavaScript to use your local vocabulary sheet. Your study data remains on this device.</p></main></noscript>
     <a class="skip-link" href="#main">Skip to main content</a>
     <div id="app"><p class="boot-message">Opening your drafting sheet…</p></div>
     <script type="module" src="/src/main.ts"></script>

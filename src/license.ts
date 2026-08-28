@@ -5,8 +5,9 @@ export interface LicenseState {
 }
 
 const SLUG = 'kind-recall';
-const TOKEN_KEY = `sb_license:${SLUG}`;
-const VERDICT_KEY = `sb_license_verdict:${SLUG}`;
+const DEMO_MODE = location.pathname.replace(/\/+$/, '') === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
+const TOKEN_KEY = `${DEMO_MODE ? 'demo:' : ''}sb_license:${SLUG}`;
+const VERDICT_KEY = `${DEMO_MODE ? 'demo:' : ''}sb_license_verdict:${SLUG}`;
 const DAY = 86_400_000;
 
 function billingBase(): string {

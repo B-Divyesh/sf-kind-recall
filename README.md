@@ -4,6 +4,8 @@ Kind Recall is a private, offline-first vocabulary recall tool for adult languag
 
 Live product: <https://kind-recall.sociobot.in>
 
+Try the isolated sample sheet in one click: <https://kind-recall.sociobot.in/demo/>. Demo activity uses its own IndexedDB database and never changes your real sheet.
+
 ## What v1 includes
 
 - A local working set of words, meanings, and personal fill-in-the-blank contexts.
@@ -33,6 +35,8 @@ npm run test:e2e
 `npm run build` is the deployment command. It produces the complete static site at `dist/`, with `dist/index.html` at its root. It also derives optimized hero formats and PWA icons from the original source assets, then writes a versioned precache service worker.
 
 Playwright is pinned to 1.58.2. The E2E suite uses the preinstalled Chromium browser and covers desktop, 390 px mobile, persistence, legal routes, axe accessibility checks, and offline reload.
+
+Testable product claims and their exact commands are listed in [`.factory/claims.json`](.factory/claims.json). The demo data and isolation boundary are documented in [`.factory/demo.md`](.factory/demo.md).
 
 ## Billing configuration
 
