@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Kind Recall drafting compass</title><desc id="desc">A K made from a drafting compass and a returning curved arrow.</desc>
+  <rect width="512" height="512" rx="92" fill="#f5f0e3"/>
+  <path d="M64 128H448M64 256H448M64 384H448M128 64V448M256 64V448M384 64V448" stroke="#8fa9b8" stroke-width="3" opacity=".45"/>
+  <circle cx="256" cy="144" r="27" fill="#a33a2b"/>
+  <path d="M246 168L148 406M266 168L364 406M193 296H319" fill="none" stroke="#14283a" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M376 141c58 50 61 139 9 192-31 31-73 43-113 36" fill="none" stroke="#175d7a" stroke-width="24" stroke-linecap="round"/>
+  <path d="M284 328l-36 38 45 25" fill="#175d7a"/>
+</svg>

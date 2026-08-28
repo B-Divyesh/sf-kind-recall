@@ -1,0 +1,11 @@
+{
+  "slug": "kind-recall",
+  "title": "Kind Recall",
+  "territory": "utilities",
+  "user": "An adult language learner who wants vocabulary to become usable in conversation without punitive streak mechanics.",
+  "smallest_useful_product": "Offline PWA for 20–100 user-entered words: schedule short typed or spoken recall prompts in personal contexts, show a forgiving return queue after lapses, and record confidence separately from correctness.",
+  "success_measure": "After 30 days, 50% of weekly active learners return after one missed week and improve delayed free-recall accuracy by 15 percentage points on their own word set.",
+  "artifact_class": "pwa-offline",
+  "monetization": "one-time",
+  "constraints": "Keep decks and recordings on device; no claims of clinical efficacy; speech checking must be optional and never rank accents."
+}
