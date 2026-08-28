@@ -1,5 +1,26 @@
 # Kind Recall build handoff
 
+## Independent verification status — FAIL (2026-08-28)
+
+Candidate `6c731c1df35ca581159a67fe19c9c02d0379d6c1` was independently verified
+against <https://kind-recall.sociobot.in/>. The live HTML, JS, CSS, and service
+worker exactly match the clean candidate build, and the core app/PWA flow
+passes. **This handoff is nevertheless a FAIL.**
+
+- **High:** the production Sociobot license verification endpoint returned 200
+  for every request in a 120-request, 24-concurrent invalid-token burst; it
+  never returned 429 or `Retry-After`.
+- **Medium:** deployed hashed JS/CSS/SW assets have only
+  `Cache-Control: public, must-revalidate, max-age=30`, rather than long-lived
+  immutable caching required for this PWA.
+- **Low:** the live manifest is served as `application/octet-stream`, not
+  `application/manifest+json`.
+
+See `.factory/verification.md` for commands, artifact hashes, exhaustive
+passing checks, response-policy observations, and remediation criteria. Do not
+ship until the high- and medium-severity issues are fixed and independently
+retested.
+
 ## Shipped
 
 Kind Recall is a complete local-first vocabulary practice PWA built with Vite and TypeScript. Learners can add up to 20 words free (100 with Plus), write personal blanked contexts, complete typed or optional spoken recall prompts, reveal answers, and record confidence separately from correctness. Reviews are rescheduled locally. After seven days away, the session becomes a forgiving return set capped at five of the oldest due words.
