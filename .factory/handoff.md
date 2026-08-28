@@ -1,25 +1,30 @@
 # Kind Recall build handoff
 
-## Independent verification status — FAIL (2026-08-28)
+## Independent verification status — FAIL (2026-08-28, fresh evidence)
 
 Candidate `6c731c1df35ca581159a67fe19c9c02d0379d6c1` was independently verified
-against <https://kind-recall.sociobot.in/>. The live HTML, JS, CSS, and service
-worker exactly match the clean candidate build, and the core app/PWA flow
-passes. **This handoff is nevertheless a FAIL.**
+from a clean detached checkout against <https://kind-recall.sociobot.in/>. The
+live HTML, JS, CSS, service worker, manifest, offline page, and legal pages
+byte-match the candidate build. **The release verdict is FAIL.**
 
-- **High:** the production Sociobot license verification endpoint returned 200
-  for every request in a 120-request, 24-concurrent invalid-token burst; it
-  never returned 429 or `Retry-After`.
-- **Medium:** deployed hashed JS/CSS/SW assets have only
-  `Cache-Control: public, must-revalidate, max-age=30`, rather than long-lived
-  immutable caching required for this PWA.
-- **Low:** the live manifest is served as `application/octet-stream`, not
-  `application/manifest+json`.
+- **High — VFY2-001:** a free browser imported a valid 101-word Kind Recall
+  JSON file and the library showed `WORKING SET · 101/20`. Import bypasses both
+  the 20-word free and 100-word Plus capacity limits.
+- **High — VFY2-002:** fresh axe WCAG A/AA on the actual study screen found a
+  serious `aria-prohibited-attr`: a plain `div.progress-track` has `aria-label`
+  but no valid role.
+- **Medium — VFY2-003:** deployed hashed JS and CSS are cached only for 30
+  seconds, without `immutable`.
+- **Low — VFY2-004:** the manifest is served as `application/octet-stream`.
 
-See `.factory/verification.md` for commands, artifact hashes, exhaustive
-passing checks, response-policy observations, and remediation criteria. Do not
-ship until the high- and medium-severity issues are fixed and independently
-retested.
+The earlier deployment-only rate-limit finding is no longer reproducible: a
+fresh 60-concurrent production `/verify` burst began returning `429` at request
+15 with `Retry-After: 4`. Offline reload, service-worker update toast,
+desktop/mobile flows, keyboard use, privacy/network checks, console checks,
+build, typecheck, unit tests, and supplied E2E tests passed. See
+`.factory/verification-2.md` for exact commands, hashes, full evidence, and
+remediation. Do not ship until both high-severity defects are fixed and the
+candidate is independently retested.
 
 ## Shipped
 
