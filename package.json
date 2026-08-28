@@ -1,0 +1,24 @@
+{
+  "name": "kind-recall",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "assets": "node scripts/build-assets.mjs",
+    "build": "npm run assets && vite build && node scripts/build-sw.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run",
+    "test:e2e": "npm run build && playwright test",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.58.2",
+    "@types/node": "24.10.1",
+    "sharp": "0.35.4",
+    "typescript": "5.7.2",
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
+  }
+}

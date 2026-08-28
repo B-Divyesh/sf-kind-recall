@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kind-recall.sociobot.in/sitemap.xml
