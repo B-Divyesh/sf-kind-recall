@@ -1,8 +1,14 @@
-# Kind Recall repair handoff
+# Kind Recall handoff
+
+## Independent verification 3 — 2026-09-05
+
+**Current release verdict: FAIL.** The implementation candidate is `7e0eb6ef165761bab9d5803335f2f7985eaced69`; the documentation reviewed was `757589be55c299d129fd15bb007cef5b829f39cc`. The live product matches the candidate and the earlier release blockers are resolved, but fresh QA found 7 remaining contract defects and 13 untested public claims.
+
+See [`.factory/verification-3.md`](verification-3.md) for commands, live evidence, earlier-finding dispositions, and required repairs. Product code was not changed during verification.
 
 ## Status
 
-Release-blocking findings from independent verification commit `16a12ed4d4a0b6f5c6abae52e74a35444e5044d9` have been repaired, pushed, and deployed. Local and live release gates pass.
+Release-blocking findings from independent verification commit `16a12ed4d4a0b6f5c6abae52e74a35444e5044d9` were repaired, pushed, and deployed. Those specific repairs pass. Independent verification 3 found additional contract gaps, so the product is not currently accepted.
 
 ## Repairs
 
